@@ -28,10 +28,11 @@ import java.util.WeakHashMap;
 
 public class PredictionLayer implements BdvLayer {
 
+	public static final String SIZE_OF_QUEUE = "predictionLayer.sizeOfQueue";
+	
 	private final Holder<? extends SegmentationItem> model;
 	private final RandomAccessibleContainer<VolatileARGBType> segmentationContainer;
-	private final SharedQueue queue = new SharedQueue(Runtime.getRuntime()
-		.availableProcessors());
+	private final SharedQueue queue = new SharedQueue(getSizeOfQueue());
 	private final Holder<Boolean> visibility;
 	private Notifier listeners = new Notifier();
 	private RandomAccessibleInterval<? extends NumericType<?>> view;
@@ -51,6 +52,19 @@ public class PredictionLayer implements BdvLayer {
 		this.visibility = visibility;
 		model.notifier().add(() -> classifierChanged());
 		registerListener(model.get());
+	}
+
+	private int getSizeOfQueue() {
+		String val = System.getProperty(SIZE_OF_QUEUE);
+		if (val != null) {
+			try {
+				return Integer.parseInt(val);
+			}
+			catch (NumberFormatException e) {
+				// ignore
+			}
+		}
+		return Runtime.getRuntime().availableProcessors();
 	}
 
 	private void registerListener(SegmentationItem segmenter) {
